@@ -8,7 +8,7 @@ const { ExploreTrendRequest, SearchProviders } = require('g-trends')
 require('events').EventEmitter.prototype._maxListeners = 10000;
 const explorer = new ExploreTrendRequest()
 const port = process.env.PORT || 8181;
-
+const getAPI = require('./api');
 const config = {
     user: 'WebCSA',
     password: '1SA@webCrawler',
@@ -22,7 +22,7 @@ const config = {
 let location = [];
 let fQuery = [];
 
-var jobSchedule = schedule.scheduleJob('5 0 * * *', function () {
+let jobSchedule = schedule.scheduleJob('5 0 * * *', function () {
     sql.close();
     sql.connect(config, err => {
         explorer.past30Days()
@@ -38,21 +38,21 @@ var jobSchedule = schedule.scheduleJob('5 0 * * *', function () {
                     let finalDataLocation = dataLocation.split(':')["0"];
 
                     for (let x = 1; x < csv.length; x++) {
-                        var locationName = finalDataLocation
-                        var searchTime = csv[x]["0"];
-                        var searchCount = csv[x][i];
-                        var dateKey = ((csv[x]["0"]).split("-")["0"]) + '' + ((csv[x]["0"]).split("-")["1"]) + '' + ((csv[x]["0"]).split("-")["2"]);
-                        var insertQuery = "INSERT INTO searchData (locationName, searchTime, searchCount, datekey) VALUES ('" + locationName + "','" + searchTime + "'," + searchCount + "," + dateKey + ")";
-                        var countQuery = "SELECT * FROM searchData WHERE  locationName = '" + locationName + "' AND searchTime = '" + searchTime + "' ";
+                        let locationName = finalDataLocation
+                        let searchTime = csv[x]["0"];
+                        let searchCount = csv[x][i];
+                        let dateKey = ((csv[x]["0"]).split("-")["0"]) + '' + ((csv[x]["0"]).split("-")["1"]) + '' + ((csv[x]["0"]).split("-")["2"]);
+                        let insertQuery = "INSERT INTO searchData (locationName, searchTime, searchCount, datekey) VALUES ('" + locationName + "','" + searchTime + "'," + searchCount + "," + dateKey + ")";
+                        let countQuery = "SELECT * FROM searchData WHERE  locationName = '" + locationName + "' AND searchTime = '" + searchTime + "' ";
                         fQuery.push([
                             { insertQuery, countQuery }
-                        ])
+                        ]);
                     }
                 }
-                var num = fQuery.length - 1;
+                let num = fQuery.length - 1;
                 delay_loop(fQuery, num);
                 function delay_loop(items, num) {
-                    var data = items.shift(),
+                    let data = items.shift(),
                         // delay between each loop
                         delay = 500;
                     // start a delay
@@ -60,7 +60,7 @@ var jobSchedule = schedule.scheduleJob('5 0 * * *', function () {
                         let s1 = data["0"]["countQuery"];
                         let s2 = data["0"]["insertQuery"];
                         new sql.Request().query(s1, (err, result) => {
-                            var count = result.rowsAffected["0"];
+                            let count = result.rowsAffected["0"];
                             if (count >= 1) {
                                 console.log('Already Data')
                             } else {
@@ -68,7 +68,7 @@ var jobSchedule = schedule.scheduleJob('5 0 * * *', function () {
                                 new sql.Request().query(s2, (err, result) => {
                                 })
                             }
-                        })
+                        });
                         // recursive call 
                         num--;
                         if (items.length) {
@@ -78,11 +78,20 @@ var jobSchedule = schedule.scheduleJob('5 0 * * *', function () {
                         }
                     }, delay);
                 }
-            })
-    })
+            });
+    });
 });
+
+app.get('/api/allData', function (req, res) {
+	getAPI.getAllData(res);
+})
+
+app.get('/api/sumData', function (req, res) {
+	getAPI.getSumData(res);
+})
+
 
 
 app.listen(port, function () {
-    console.log("App start on http://localhost:3000");
+    console.log("App start on http://localhost:8181");
 });

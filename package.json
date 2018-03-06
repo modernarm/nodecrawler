@@ -11,6 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/mssql": "^4.0.7",
     "async": "^2.6.0",
     "chai": "^4.1.2",
     "cheerio": "^1.0.0-rc.2",
